@@ -1,0 +1,34 @@
+module top;
+bit clk=0;
+
+
+intf intff(clk);
+
+dual_mem duv(
+.clk(intff.clk),
+.write(intff.write),
+.read(intff.read),
+.data_in(intff.data_in),
+.wr_address(intff.wr_address),
+.rd_address(intff.rd_address),
+.data_out(intff.data_out)
+);
+
+
+
+always #5 clk=~clk;
+
+initial begin
+uvm_config_db#(virtual intf)::set(uvm_root::get(), "*", "vif", intff);
+
+
+run_test();
+
+end
+
+initial begin
+$shm_open("waves.shm");
+$shm_probe("ACMTF");
+end
+
+endmodule
