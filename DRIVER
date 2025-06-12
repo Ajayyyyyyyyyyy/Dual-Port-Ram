@@ -1,0 +1,45 @@
+class driver extends uvm_driver #(seq_item);
+`uvm_component_utils(driver)
+
+virtual intf vif;
+
+function new(string name="monitor", uvm_component parent);
+super.new(name, parent);
+
+endfunction
+
+virtual function void build_phase(uvm_phase phase);
+super.build_phase(phase);
+if (!uvm_config_db#(virtual intf)::get(this, "", "vif", vif)) 
+begin
+`uvm_fatal("NO_VIF", {"Virtual interface must be set for: ", get_full_name(), ".vif"});
+end
+
+endfunction
+
+virtual task run_phase(uvm_phase phase);
+seq_item req;
+
+forever begin
+seq_item_port.get_next_item(req); 
+drive(req);                 
+seq_item_port.item_done();      
+end
+                 
+
+endtask
+
+virtual task drive(seq_item req);
+@vif. drv_cb;
+vif.drv_cb.write      <= req.write;
+vif.drv_cb.read       <= req.read;
+vif.drv_cb.wr_address <= req.wr_address;
+vif.drv_cb.rd_address <= req.rd_address;
+vif.drv_cb.data_in    <= req.data_in;
+
+
+`uvm_info("DRIVER", $sformatf("time=%0t | read=%0d write=%0d rd_addr=%0d wr_addr=%0d data_in=%0d",$time, req.read, req.write, req.rd_address, req.wr_address, req.data_in), UVM_MEDIUM)
+
+
+endtask
+endclass 
