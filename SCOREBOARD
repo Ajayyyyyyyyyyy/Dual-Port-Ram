@@ -1,0 +1,95 @@
+class scoreboard extends uvm_scoreboard;
+`uvm_component_utils(scoreboard)
+
+uvm_analysis_imp #(seq_item, scoreboard) item_collected_export;
+
+seq_item  pkt_qu[$];
+seq_item req;
+
+bit [15:0] expected_mem [0:255];
+bit [15:0] expected_out;
+
+function new (string name,uvm_component parent);
+super.new(name,parent);
+endfunction
+
+virtual function void build_phase(uvm_phase phase);
+super.build_phase(phase);
+item_collected_export = new("item_collected_export",this);
+endfunction
+
+virtual function void write (seq_item req);
+pkt_qu.push_back(req);
+endfunction
+
+virtual task run_phase(uvm_phase phase);
+forever begin
+wait(pkt_qu.size()>0);
+req = pkt_qu.pop_front();
+
+if (req.write && !req.read) 
+begin
+expected_mem[req.wr_address] = req.data_in; 
+
+`uvm_info("WRITE SUCESS", $sformatf("WRITE: wr_address=%0d data=%0h \n",req.wr_address, req.data_in), UVM_MEDIUM)
+
+end
+
+
+else if (req.read && !req.write) begin
+expected_out = expected_mem[req.rd_address];
+
+if (req.data_out === expected_out) 
+begin
+
+`uvm_info("READ_PASS", $sformatf("READ PASS : addr: wrote %0d but read %0d -> data_out=%0h \n", req.wr_address, req.rd_address, req.data_out), UVM_LOW)
+  
+end 
+
+else 
+begin
+    
+`uvm_error("READ_FAIL", $sformatf("READ FAIL: addr=%0d Expected=%0h Got=%0h", req.rd_address, expected_out , req.data_out))
+  
+end
+end
+
+
+else if (req.write && req.read) 
+begin
+
+if (req.data_out === 16'b0)
+begin
+
+`uvm_info("BOTH PASS", "BOTH PASS: data_out is 0 \n", UVM_LOW)
+
+end
+else 
+begin
+
+`uvm_error("BOTH FAIL", $sformatf("BOTH FAIL: data_out=%0h (expected 0) \n", req.data_out))
+
+end
+expected_out = req.data_out;
+end 
+
+
+else if (!req.write && !req.read)
+begin
+if (req.data_out === expected_out) 
+begin
+
+`uvm_info("IDLE PASS", $sformatf("IDLE PASS: data_out=%0d  \n", req.data_out), UVM_LOW)
+
+end 
+else 
+begin
+
+`uvm_error("IDLE FAIL", $sformatf("IDLE FAIL: data_out=%0d last_data_out=%0d) \n", req.data_out,req.data_out))
+
+end
+end
+end
+endtask
+
+endclass 
