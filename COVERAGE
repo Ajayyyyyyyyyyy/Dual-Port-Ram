@@ -1,0 +1,55 @@
+class Coverage extends uvm_subscriber #(seq_item);
+  `uvm_component_utils(Coverage)
+
+  
+  seq_item req;
+
+  
+  covergroup cg;
+  write:  coverpoint (req.write) {
+      bins wr_active = {1};
+      bins wr_inactive = {0};
+    }
+
+   read:  coverpoint (req.read) {
+      bins rd_active = {1};
+      bins rd_inactive = {0};
+    }
+
+  write_address:  coverpoint (req.wr_address) {
+      bins wr_low_bin    = {[0:15]};
+      bins wr_medium_bin = {[16:127]};
+      bins wr_high_bin   = {[128:255]};
+    }
+
+ read_address:   coverpoint (req.rd_address) {
+      bins rd_low_bin    = {[0:15]};
+      bins rd_medium_bin = {[16:127]};
+      bins rd_high_bin   = {[128:255]};
+    }
+
+data_in:  coverpoint req.data_in;
+
+
+ write_cross_read:   cross req.write, req.read;
+
+
+  endgroup
+ 
+
+  function new(string name, uvm_component parent);
+    super.new(name, parent);
+    cg = new(); 
+  endfunction
+
+
+  virtual function void write(seq_item t);
+    req = t;
+    cg.sample();  
+  endfunction
+
+  function void report_phase(uvm_phase phase);
+    `uvm_info("COVERAGE", $sformatf("Coverage is %0.2f%%", cg.get_coverage()), UVM_LOW)
+  endfunction
+
+endclass 
