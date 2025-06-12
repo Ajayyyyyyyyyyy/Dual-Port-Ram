@@ -1,4 +1,4 @@
-# Dual-Port-Ram
+# Dual-Port-Ram (UVM)
 
 What is Dual Port RAM?
 Dual Port RAM is a type of memory that allows two independent accesses at the same time—either reads, writes, or both—through two separate ports (Port A and Port B).
